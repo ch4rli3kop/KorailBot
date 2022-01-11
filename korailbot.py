@@ -75,8 +75,11 @@ def korail_search(start, dest, month, day, hour):
     row = []
     for tr in table.find_all('tr'):
         for td in tr.find_all('td'):
-            #print(td)
-            row.append(td.text.strip())
+            text = td.text.strip()
+            text = text.replace('\r', '')
+            text = text.replace('\t', '')
+            text = text.replace('\n', '')
+            row.append(text)
         if row != []:
             res.append(row)
         row = []
@@ -90,8 +93,13 @@ def korail_search(start, dest, month, day, hour):
 
 def korail_reserve(num):
     global driver
-    button_name = 'btnRsv1_' + num
-    
+    button_name = 'btnRsv1_' + num  
+    button = driver.find_elements_by_name(button_name)
+    while len(button) == 0:
+        driver.find_element_by_class_name('btn_inq').click()
+        time.sleep(0.2)
+        button = driver.find_elements_by_name(button_name)
+
     driver.find_element_by_name(button_name).click()
     alert_obj = driver.switch_to.alert
     alert_obj
@@ -133,8 +141,9 @@ async def reserve(ctx):
 async def login(ctx, *, text = None):
     if text != None:
         args = text.split(' ')
-        if len(args) == 2:
+        if len(args) != 2:
             await ctx.send('인자를 확인해주세요.')
+            return
         login_ID = args[0]
         login_PW = args[1]
         try:
@@ -164,6 +173,7 @@ async def search(ctx, *, text = None):
             result = korail_search(start, dest, month, day, time)
         except:
             ctx.send('인자를 확인해주세요.\nex) !search 영등포 조치원 1 24 4')
+            return
         await ctx.send(result)
     else:
         await ctx.send('인자를 확인해주세요.')
@@ -176,6 +186,7 @@ async def select(ctx, *, text = None):
             korail_reserve(select)
         except:
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
+            return
         await ctx.send('장바구니에 담았습니다.')
     else:
         await ctx.send('인자를 확인해주세요.')
