@@ -183,6 +183,7 @@ async def hi(ctx):
     '''
     인사하기
     '''
+    print(ctx.message.author.id)
     await ctx.send('안녕하세요 봇이 정상적으로 작동중입니다.')
 
 @bot.command()
@@ -196,7 +197,7 @@ async def hihi(ctx, *, text = None):
 @bot.command()
 async def reserve(ctx):
     print('Reserving 동작 중')
-    work_list['charlie'] = Korail()
+    work_list[str(ctx.message.author.id)] = Korail()
     await ctx.send('다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM')
 
 @bot.command()
@@ -209,7 +210,7 @@ async def login(ctx, *, text = None):
         login_ID = args[0]
         login_PW = args[1]
         try:
-            login_success = work_list['charlie'].korail_login(login_ID, login_PW)
+            login_success = work_list[str(ctx.message.author.id)].korail_login(login_ID, login_PW)
             if login_success:
                 await ctx.send('로그인이 완료되었습니다.')
         except:
@@ -238,7 +239,7 @@ async def search(ctx, *, text = None):
             time = '0' + time
 
         try:
-            result = work_list['charlie'].korail_search(start, dest, month, day, time)
+            result = work_list[str(ctx.message.author.id)].korail_search(start, dest, month, day, time)
         except:
             await ctx.send('실행오류.')
             return
@@ -250,10 +251,10 @@ async def select(ctx, *, text = None):
     if text != None:
         select = text.split(' ')[0]
         try:
-            result = work_list['charlie'].korail_reserve(select)
+            result = work_list[str(ctx.message.author.id)].korail_reserve(select)
             if result:
-                work_list['charlie'].korail_quit()
-                del work_list['charlie']
+                work_list[str(ctx.message.author.id)].korail_quit()
+                del work_list[str(ctx.message.author.id)]
         except RuntimeError as e:
             print(e)
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
