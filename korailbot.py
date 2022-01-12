@@ -33,6 +33,19 @@ class Korail:
                 self.driver.close()
             self.driver.switch_to.window(windows[0])
         
+    def _close_alert(self):
+        # alert 창 제거
+        try:
+            while True:
+                #WebDriverWait(self.driver, 3).until(EC.alert_is_present()) # 없어도 잘 됨
+                alert_obj = self.driver.switch_to.alert
+                #print(alert_obj.text)
+                alert_obj.accept()
+        except:
+            print('alert 종료')
+        finally:
+            self.driver.switch_to.window(self.driver.window_handles[0])
+
     def korail_login(self, id, pw):
         self.MEMID = id
         self.PW = pw
@@ -44,7 +57,12 @@ class Korail:
         self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
         self.driver.find_element_by_class_name('btn_login').click()
         time.sleep(0.2)
-        self._close_popup()
+        login_success = self.driver.find_elements_by_xpath('/html/body/div[1]/div[2]/div[1]/div/ul/li[2]')
+        print(login_success)
+        if len(login_success) > 0:
+            self._close_popup()
+            return True
+        self.korail_login(id, pw)
 
     def _parse_table(self, page_code):
         soup = BeautifulSoup(page_code, 'lxml')
@@ -77,6 +95,10 @@ class Korail:
         self.TIME = hour
 
         self.driver.get('https://www.letskorail.com/ebizprd/EbizPrdTicketpr21100W_pr21110.do')
+        
+        self._close_alert()
+        self._close_popup()
+
         self.driver.find_element_by_id('start').clear()
         self.driver.find_element_by_id('start').send_keys(self.START)
         self.driver.find_element_by_id('get').clear()
@@ -88,6 +110,9 @@ class Korail:
         selecter = Select(self.driver.find_element_by_id('s_hour'))
         selecter.select_by_value(self.TIME)
         self.driver.find_element_by_class_name('btn_inq').click()
+
+        self._close_alert()
+        self._close_popup()
         time.sleep(0.2)
 
         pages = self.driver.page_source
@@ -102,14 +127,30 @@ class Korail:
             button_name = 'btnRsv2_' + num
 
         # loop until find canceled ticket
+        # 예약하기 버튼 검색
         button = self.driver.find_elements_by_name(button_name)
         while len(button) == 0:
-            self.driver.find_element_by_class_name('btn_inq').click()
-            time.sleep(0.1)
-            button = self.driver.find_elements_by_name(button_name)
+            # 조회하기 버튼 클릭
+            try:
+                self.driver.find_element_by_class_name('btn_inq').click()
+                time.sleep(0.1)
+                self._close_alert()
+                self._close_popup()
+                button = self.driver.find_elements_by_name(button_name)
+            except:
+                # 캡차 검사 창이 뜰 경우 재접속하여 진행
+                self.korail_quit()
+                self.__init__()
+                self.korail_login(self.MEMID, self.PW)
+                self.korail_search(self.START, self.DEST, self.MONTH, self.DAY, self.TIME)
 
+        # 예약하기 버튼 클릭
         self.driver.find_element_by_name(button_name).click()
         
+        # alert 창 제거
+        self._close_alert()
+        self._close_popup()
+
         # 경유일 경우 확인 창 넘겨줘야 함
         iframe = self.driver.find_elements_by_id('embeded-modal-traininfo')
         if len(iframe) > 0:
@@ -120,17 +161,11 @@ class Korail:
                 btn[0].click()
             self.driver.switch_to.default_content()
 
-        # alert 창 제거
-        try:
-            while True:
-                WebDriverWait(self.driver, 3).until(EC.alert_is_present())
-                alert_obj = self.driver.switch_to.alert
-                print(alert_obj.text)
-                alert_obj.accept()
-        except:
-            print('alert 종료')
-
         self.driver.find_element_by_id('btn_next').click()
+        
+        self._close_alert()
+        self._close_popup()
+
         self.driver.find_elements_by_class_name('btn_blue_ang')[3].click()
         return True
 
@@ -162,24 +197,25 @@ async def hihi(ctx, *, text = None):
 async def reserve(ctx):
     print('Reserving 동작 중')
     work_list['charlie'] = Korail()
-    await ctx.send('다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME\n!select NUM')
+    await ctx.send('다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM')
 
 @bot.command()
 async def login(ctx, *, text = None):
     if text != None:
         args = text.split(' ')
         if len(args) != 2:
-            await ctx.send('인자를 확인해주세요.')
+            await ctx.send('인자를 확인해주세요.\nex) !login 171231231 찬희123')
             return
         login_ID = args[0]
         login_PW = args[1]
         try:
-            work_list['charlie'].korail_login(login_ID, login_PW)
+            login_success = work_list['charlie'].korail_login(login_ID, login_PW)
+            if login_success:
+                await ctx.send('로그인이 완료되었습니다.')
         except:
-            ctx.send('인자를 확인해주세요.\nex) !login 17123123 chanchanpw')
-        await ctx.send('로그인이 완료되었습니다.')
+            ctx.send('로그인 오류!\n인자를 확인해주세요.\nex) !login 171231231 찬희123')
     else:
-        await ctx.send('인자를 확인해주세요.')
+        await ctx.send('인자를 확인해주세요.\nex) !login 171231231 찬희123')
 
 @bot.command()
 async def search(ctx, *, text = None):
@@ -190,20 +226,24 @@ async def search(ctx, *, text = None):
         month = args[2]
         day = args[3]
         time = args[4]
+        if len(args) != 5:
+            await ctx.send('인자를 확인해주세요.\nex) !search 영등포 조치원 1 24 4')
+            return
+
         if len(month) < 2:
             month = '0' + month
         if len(day) < 2:
             day = '0' + day
         if len(time) < 2:
             time = '0' + time
+
         try:
             result = work_list['charlie'].korail_search(start, dest, month, day, time)
         except:
-            ctx.send('인자를 확인해주세요.\nex) !search 영등포 조치원 1 24 4')
+            await ctx.send('실행오류.')
             return
         await ctx.send(result)
-    else:
-        await ctx.send('인자를 확인해주세요.')
+        await ctx.send('20분 이내 열차는 예약할 수 없습니다.')
 
 @bot.command()
 async def select(ctx, *, text = None):
@@ -219,6 +259,7 @@ async def select(ctx, *, text = None):
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
             return
         await ctx.send('장바구니에 담았습니다.')
+        await ctx.send('봇을 종료합니다.')
     else:
         await ctx.send('인자를 확인해주세요.')
 
