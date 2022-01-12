@@ -4,112 +4,138 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
 from bot_token import Token
 
 bot=commands.Bot(command_prefix='!')
 
-MEMID = ''
-PW = ''
-START = ''
-DEST = ''
-MONTH = ''
-DAY = ''
-TIME = ''
-driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
+work_list = {}
 
+class Korail:
+    def __init__(self):
+        self.MEMID = ''
+        self.PW = ''
+        self.START = ''
+        self.DEST = ''
+        self.MONTH = ''
+        self.DAY = ''
+        self.TIME = ''
+        self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
-def korail_login(id, pw):
-    #korail_init()
-    global MEMID, PW, driver
-    MEMID = id
-    PW = pw
+    def _close_popup(self):
+        windows = self.driver.window_handles
+        if len(windows) > 1:
+            for i in range(1, len(windows)):
+                self.driver.switch_to.window(self.driver.window_handles[i])
+                self.driver.close()
+            self.driver.switch_to.window(windows[0])
+        
+    def korail_login(self, id, pw):
+        self.MEMID = id
+        self.PW = pw
 
-    driver.get('https://www.letskorail.com/korail/com/login.do')
-    windows = driver.window_handles
-    if len(windows) > 1:
-        for i in range(1, len(windows)):
-            driver.switch_to.window(driver.window_handles[i])
-            driver.close()
-    driver.switch_to.window(windows[0])
-    time.sleep(0.2)
-
-    driver.find_element_by_id('txtMember').send_keys(MEMID)
-    driver.find_element_by_id('txtPwd').send_keys(PW)
-    driver.find_element_by_class_name('btn_login').click()
-    time.sleep(0.2)
-    windows = driver.window_handles
-    if len(windows) > 1:
-        for i in range(1, len(windows)):
-            driver.switch_to.window(driver.window_handles[i])
-            driver.close()
-    driver.switch_to.window(windows[0])
-
-def korail_search(start, dest, month, day, hour):
-    global START, DEST, MONTH, DAY, TIME, driver
-    START = start
-    DEST = dest
-    MONTH = month
-    DAY = day
-    TIME = hour
-
-    driver.get('https://www.letskorail.com/ebizprd/EbizPrdTicketpr21100W_pr21110.do')
-    driver.find_element_by_id('start').clear()
-    driver.find_element_by_id('start').send_keys(START)
-    driver.find_element_by_id('get').clear()
-    driver.find_element_by_id('get').send_keys(DEST)
-    selecter = Select(driver.find_element_by_id('s_month'))
-    selecter.select_by_value(MONTH)
-    selecter = Select(driver.find_element_by_id('s_day'))
-    selecter.select_by_value(DAY)
-    selecter = Select(driver.find_element_by_id('s_hour'))
-    selecter.select_by_value(TIME)
-    driver.find_element_by_class_name('btn_inq').click()
-    time.sleep(0.9)
-
-    pages = driver.page_source
-    soup = BeautifulSoup(pages, 'lxml')
-    table = soup.find('table', id='tableResult')
-    res = []
-    row = []
-    for tr in table.find_all('tr'):
-        for td in tr.find_all('td'):
-            text = td.text.strip()
-            text = text.replace('\r', '')
-            text = text.replace('\t', '')
-            text = text.replace('\n', '')
-            row.append(text)
-        if row != []:
-            res.append(row)
-        row = []
-    table_df = pd.DataFrame(res)
-    columns = []
-    for th in table.find_all('th'):
-        columns.append(th.text.strip())
-    table_df.columns = columns
-    table_df2 = table_df.drop(['특실/우등실', '유아', '자유석', '예약대기', '정차역(경유)', '차량유형/편성정보', '운임요금', '일반실'], axis=1)
-    return table_df2
-
-def korail_reserve(num):
-    global driver
-    button_name = 'btnRsv1_' + num  
-    button = driver.find_elements_by_name(button_name)
-    while len(button) == 0:
-        driver.find_element_by_class_name('btn_inq').click()
+        self.driver.get('https://www.letskorail.com/korail/com/login.do')
+        self._close_popup()
+        
+        self.driver.find_element_by_id('txtMember').send_keys(self.MEMID)
+        self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
+        self.driver.find_element_by_class_name('btn_login').click()
         time.sleep(0.2)
-        button = driver.find_elements_by_name(button_name)
+        self._close_popup()
 
-    driver.find_element_by_name(button_name).click()
-    alert_obj = driver.switch_to.alert
-    alert_obj
-    alert_obj.accept()
-    alert_obj = driver.switch_to.alert
-    alert_obj.accept()
-    driver.find_element_by_id('btn_next').click()
-    driver.find_elements_by_class_name('btn_blue_ang')[3].click()
-    driver.quit()
-    #TODO: while until reserving successfully
+    def _parse_table(self, page_code):
+        soup = BeautifulSoup(page_code, 'lxml')
+        table = soup.find('table', id='tableResult')
+        res = []
+        row = []
+        for tr in table.find_all('tr'):
+            for td in tr.find_all('td'):
+                text = td.text.strip()
+                text = text.replace('\r', '')
+                text = text.replace('\t', '')
+                text = text.replace('\n', '')
+                row.append(text)
+            if row != []:
+                res.append(row)
+            row = []
+        table_df = pd.DataFrame(res)
+        columns = []
+        for th in table.find_all('th'):
+            columns.append(th.text.strip())
+        table_df.columns = columns
+        table_df2 = table_df.drop(['특실/우등실', '유아', '자유석', '예약대기', '정차역(경유)', '차량유형/편성정보', '운임요금', '일반실'], axis=1)
+        return table_df2
+
+    def korail_search(self, start, dest, month, day, hour):
+        self.START = start
+        self.DEST = dest
+        self.MONTH = month
+        self.DAY = day
+        self.TIME = hour
+
+        self.driver.get('https://www.letskorail.com/ebizprd/EbizPrdTicketpr21100W_pr21110.do')
+        self.driver.find_element_by_id('start').clear()
+        self.driver.find_element_by_id('start').send_keys(self.START)
+        self.driver.find_element_by_id('get').clear()
+        self.driver.find_element_by_id('get').send_keys(self.DEST)
+        selecter = Select(self.driver.find_element_by_id('s_month'))
+        selecter.select_by_value(self.MONTH)
+        selecter = Select(self.driver.find_element_by_id('s_day'))
+        selecter.select_by_value(self.DAY)
+        selecter = Select(self.driver.find_element_by_id('s_hour'))
+        selecter.select_by_value(self.TIME)
+        self.driver.find_element_by_class_name('btn_inq').click()
+        time.sleep(0.2)
+
+        pages = self.driver.page_source
+        result_table = self._parse_table(pages)
+        return result_table
+        
+
+    def korail_reserve(self, num, royal = None):
+    
+        button_name = 'btnRsv1_' + num  
+        if royal == '우등':
+            button_name = 'btnRsv2_' + num
+
+        # loop until find canceled ticket
+        button = self.driver.find_elements_by_name(button_name)
+        while len(button) == 0:
+            self.driver.find_element_by_class_name('btn_inq').click()
+            time.sleep(0.1)
+            button = self.driver.find_elements_by_name(button_name)
+
+        self.driver.find_element_by_name(button_name).click()
+        
+        # 경유일 경우 확인 창 넘겨줘야 함
+        iframe = self.driver.find_elements_by_id('embeded-modal-traininfo')
+        if len(iframe) > 0:
+            self.driver.switch_to.frame(iframe[0])
+            btn = self.driver.find_elements_by_class_name('btn_blue_ang')
+            print(btn)
+            if len(btn) > 0:
+                btn[0].click()
+            self.driver.switch_to.default_content()
+
+        # alert 창 제거
+        try:
+            while True:
+                WebDriverWait(self.driver, 3).until(EC.alert_is_present())
+                alert_obj = self.driver.switch_to.alert
+                print(alert_obj.text)
+                alert_obj.accept()
+        except:
+            print('alert 종료')
+
+        self.driver.find_element_by_id('btn_next').click()
+        self.driver.find_elements_by_class_name('btn_blue_ang')[3].click()
+        return True
+
+    def korail_quit(self):
+        self.driver.quit()
 
 @bot.event
 async def on_ready():
@@ -135,6 +161,7 @@ async def hihi(ctx, *, text = None):
 @bot.command()
 async def reserve(ctx):
     print('Reserving 동작 중')
+    work_list['charlie'] = Korail()
     await ctx.send('다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME\n!select NUM')
 
 @bot.command()
@@ -147,7 +174,7 @@ async def login(ctx, *, text = None):
         login_ID = args[0]
         login_PW = args[1]
         try:
-            korail_login(login_ID, login_PW)
+            work_list['charlie'].korail_login(login_ID, login_PW)
         except:
             ctx.send('인자를 확인해주세요.\nex) !login 17123123 chanchanpw')
         await ctx.send('로그인이 완료되었습니다.')
@@ -170,7 +197,7 @@ async def search(ctx, *, text = None):
         if len(time) < 2:
             time = '0' + time
         try:
-            result = korail_search(start, dest, month, day, time)
+            result = work_list['charlie'].korail_search(start, dest, month, day, time)
         except:
             ctx.send('인자를 확인해주세요.\nex) !search 영등포 조치원 1 24 4')
             return
@@ -183,8 +210,12 @@ async def select(ctx, *, text = None):
     if text != None:
         select = text.split(' ')[0]
         try:
-            korail_reserve(select)
-        except:
+            result = work_list['charlie'].korail_reserve(select)
+            if result:
+                work_list['charlie'].korail_quit()
+                del work_list['charlie']
+        except RuntimeError as e:
+            print(e)
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
             return
         await ctx.send('장바구니에 담았습니다.')
