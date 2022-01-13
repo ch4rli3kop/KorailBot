@@ -1,18 +1,25 @@
 from re import L
 import discord
+import asyncio
+from asyncio import Queue
+import time
 from discord.ext import commands
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
 from bot_token import Token
+from threading import Thread
 
-bot=commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!')
 
 work_list = {}
+queue = asyncio.Queue
+loop = asyncio.get_event_loop()
 
 class Korail:
     def __init__(self):
@@ -23,6 +30,9 @@ class Korail:
         self.MONTH = ''
         self.DAY = ''
         self.TIME = ''
+        self.init()
+
+    def init(self):
         self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
     def _close_popup(self):
@@ -113,14 +123,14 @@ class Korail:
 
         self._close_alert()
         self._close_popup()
-        time.sleep(0.2)
+        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.ID, "divResult")))
 
         pages = self.driver.page_source
         result_table = self._parse_table(pages)
         return result_table
         
 
-    def korail_reserve(self, num, royal = None):
+    async def korail_reserve(self, num, royal = None):
     
         button_name = 'btnRsv1_' + num  
         if royal == '우등':
@@ -133,14 +143,16 @@ class Korail:
             # 조회하기 버튼 클릭
             try:
                 self.driver.find_element_by_class_name('btn_inq').click()
-                time.sleep(0.1)
                 self._close_alert()
                 self._close_popup()
+                WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.ID, "divResult")))
                 button = self.driver.find_elements_by_name(button_name)
+                # 비동기 작업 전화하려면 sleep 필수
+                await asyncio.sleep(0)
             except:
                 # 캡차 검사 창이 뜰 경우 재접속하여 진행
                 self.korail_quit()
-                self.__init__()
+                self.init()
                 self.korail_login(self.MEMID, self.PW)
                 self.korail_search(self.START, self.DEST, self.MONTH, self.DAY, self.TIME)
 
@@ -172,6 +184,27 @@ class Korail:
     def korail_quit(self):
         self.driver.quit()
 
+async def test_while(username):
+    start = time.time()
+    for i in range(0, 1000000):
+        await asyncio.sleep(0)
+        print(username, i)
+    print(time.time() - start)
+    return 12
+
+@bot.command()
+async def hihi(ctx, *, text = None):
+    print(text)
+    if text != None:
+        username = ctx.message.author.name
+        await ctx.send(str(username) + '님이 테스트 중입니다.')
+        print(username)
+        task = asyncio.create_task(test_while(username))
+        result = await task
+        await ctx.send(str(result))
+    else:
+        await ctx.send('인자를 확인해주세요')
+
 @bot.event
 async def on_ready():
     print(f"봇={bot.user.name}로 연결중")
@@ -186,13 +219,6 @@ async def hi(ctx):
     print(ctx.message.author.id)
     await ctx.send('안녕하세요 봇이 정상적으로 작동중입니다.')
 
-@bot.command()
-async def hihi(ctx, *, text = None):
-    print(text)
-    if text != None:
-        await ctx.send(text)
-    else:
-        await ctx.send('인자를 확인해주세요')
 
 @bot.command()
 async def reserve(ctx):
@@ -251,7 +277,9 @@ async def select(ctx, *, text = None):
     if text != None:
         select = text.split(' ')[0]
         try:
-            result = work_list[str(ctx.message.author.id)].korail_reserve(select)
+            #  비동기 작업 추가
+            task = asyncio.create_task(work_list[str(ctx.message.author.id)].korail_reserve(select))
+            result = await task
             if result:
                 work_list[str(ctx.message.author.id)].korail_quit()
                 del work_list[str(ctx.message.author.id)]
