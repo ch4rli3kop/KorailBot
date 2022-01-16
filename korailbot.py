@@ -33,7 +33,7 @@ class Korail:
         self.init()
 
     def init(self):
-
+        self.virtual_display = Display(visible=0, size=(800, 600)).start()
         self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
     def _close_popup(self):
@@ -186,6 +186,7 @@ class Korail:
 
     def korail_quit(self):
         self.driver.quit()
+        self.virtual_display.stop()
 
 async def test_while(username):
     start = time.time()
