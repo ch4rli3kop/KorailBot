@@ -13,9 +13,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
 from bot_token import Token
-from threading import Thread
+from pyvirtualdisplay import Display
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', help_command=None)
 
 work_list = {}
 queue = asyncio.Queue
@@ -33,6 +33,7 @@ class Korail:
         self.init()
 
     def init(self):
+
         self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
     def _close_popup(self):
@@ -147,7 +148,7 @@ class Korail:
                 self._close_popup()
                 WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.ID, "divResult")))
                 button = self.driver.find_elements_by_name(button_name)
-                # 비동기 작업 전화하려면 sleep 필수
+                # 비동기 작업 전환하려면 sleep 필수
                 await asyncio.sleep(0)
             except:
                 # 캡차 검사 창이 뜰 경우 재접속하여 진행
@@ -162,6 +163,8 @@ class Korail:
         # alert 창 제거
         self._close_alert()
         self._close_popup()
+
+        # 20분 이내 예약일 시
 
         # 경유일 경우 확인 창 넘겨줘야 함
         iframe = self.driver.find_elements_by_id('embeded-modal-traininfo')
@@ -205,6 +208,17 @@ async def hihi(ctx, *, text = None):
     else:
         await ctx.send('인자를 확인해주세요')
 
+@bot.command()
+async def help(ctx):
+    embed=discord.Embed(title="코레일봇 사용가이드", description="코레일예약봇에게 다음과 같이 **개인메시지**를 전송합니다. 메시지는 각각 응답을 받은 뒤 입력합니다.\n```!reserve\n!login {멤버십 아이디} {패스워드}\n!search {출발역} {도착역} {월} {일} {시}\n!select {선택번호}```", color=discord.Color.random())
+    embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
+    embed.add_field(name="!reserve", value="각 사용자에 대해 봇 사용을 준비합니다. 성공적으로 준비가 완료되면, 다음과 같은 메시지가 도착합니다. ```다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM```", inline=False)
+    embed.add_field(name="!login 17123123 THISISPASSWD", value="코레일 사이트에 접속합니다. 성공적으로 로그인이 완료되면, 다음과 같은 메시지가 도착합니다. ```로그인이 완료되었습니다.```", inline=False)
+    embed.add_field(name="!search 서울 춘천 1 13 1", value="표를 검색합니다. 성공적으로 검색이 완료되면, 다음과 같은 메시지가 도착합니다. ```구분\t열차번호\t출발\t도착\t가격\t소요시간\n0\t직통\t2027\t청량리19:15\t춘천20:20\t8,600원\t01:05\n1\t직통\t2029\t용산19:58\t춘천21:22\t9,800원\t01:24```", inline=False)
+    embed.add_field(name="!select 0", value="선택한 표를 예약합니다. 성공적으로 취소표를 예약했다면 자동으로 장바구니에 추가되며, 다음과 같은 메시지가 도착한 뒤 봇이 종료됩니다.```장바구니에 담았습니다.\n봇을 종료합니다.```", inline=False)
+    embed.set_footer(text="응답 메시지 도달에 시간이 오래 걸린다면, 누군가 봇을 사용 중이라는 뜻입니다. 조금만 기다리고 사용해주세요!")
+    await ctx.send(embed=embed)
+
 @bot.event
 async def on_ready():
     print(f"봇={bot.user.name}로 연결중")
@@ -224,7 +238,10 @@ async def hi(ctx):
 async def reserve(ctx):
     print('Reserving 동작 중')
     work_list[str(ctx.message.author.id)] = Korail()
-    await ctx.send('다음의 명령어를 차례대로 입력해주세요.\n!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM')
+    embed=discord.Embed(title="!reserve 명령어 성공", description="다음의 명령어를 차례대로 입력해주세요.\n```!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM```", color=discord.Color.random())
+    embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
+    embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def login(ctx, *, text = None):
@@ -238,7 +255,10 @@ async def login(ctx, *, text = None):
         try:
             login_success = work_list[str(ctx.message.author.id)].korail_login(login_ID, login_PW)
             if login_success:
-                await ctx.send('로그인이 완료되었습니다.')
+                embed=discord.Embed(title="!login 명령어 성공", description="로그인이 완료되었습니다. 다음 명령어를 입력해주세요. \nex) `!search 영등포 조치원 1 24 4`", color=discord.Color.random())
+                embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
+                embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
+                await ctx.send(embed=embed)
         except:
             ctx.send('로그인 오류!\n인자를 확인해주세요.\nex) !login 171231231 찬희123')
     else:
@@ -269,6 +289,10 @@ async def search(ctx, *, text = None):
         except:
             await ctx.send('실행오류.')
             return
+        embed=discord.Embed(title="!search 명령어 성공", description="다음 리스트에서 예매할 기차표를 선택해주세요.\n**[주의] 20분 이내 열차는 예약할 수 없습니다.**\nex) `!select 0`", color=discord.Color.random())
+        embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
+        embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
+        await ctx.send(embed=embed)
         await ctx.send(result)
         await ctx.send('20분 이내 열차는 예약할 수 없습니다.')
 
@@ -287,8 +311,10 @@ async def select(ctx, *, text = None):
             print(e)
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
             return
-        await ctx.send('장바구니에 담았습니다.')
-        await ctx.send('봇을 종료합니다.')
+        embed=discord.Embed(title="장바구니 추가 완료!", description="선택한 표를 장바구니에 추가했습니다.\n봇을 종료합니다.", color=discord.Color.random())
+        embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
+        embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
+        await ctx.send(embed=embed)
     else:
         await ctx.send('인자를 확인해주세요.')
 
