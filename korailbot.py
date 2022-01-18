@@ -51,7 +51,7 @@ class Korail:
         chrome_options.add_argument('--user-data-dir=~/.config/google-chrome')
         #chrome_options.add_argument('--no-sandbox')
         #chrome_options.add_argument("--single-process")
-        #chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver', chrome_options=chrome_options)
         #self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
@@ -81,8 +81,10 @@ class Korail:
         self.PW = pw
 
         self.driver.get('https://www.letskorail.com/korail/com/login.do')
-        self._close_popup()
         
+        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "login_mem")))
+        self._close_popup()
+
         self.driver.find_element_by_id('txtMember').send_keys(self.MEMID)
         self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
         self.driver.find_element_by_class_name('btn_login').click()
@@ -130,8 +132,12 @@ class Korail:
 
         self.driver.get('https://www.letskorail.com/ebizprd/EbizPrdTicketpr21100W_pr21110.do')
         
+        #WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "ticket_box")))
         self._close_alert()
         self._close_popup()
+        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "btn_inq")))
+        
+
 
         self.driver.find_element_by_id('start').clear()
         self.driver.find_element_by_id('start').send_keys(self.START)
@@ -147,7 +153,7 @@ class Korail:
 
         self._close_alert()
         self._close_popup()
-        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.ID, "divResult")))
+        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, "divResult")))
 
         pages = self.driver.page_source
         result_table = self._parse_table(pages)
@@ -169,7 +175,7 @@ class Korail:
                 self.driver.find_element_by_class_name('btn_inq').click()
                 self._close_alert()
                 self._close_popup()
-                WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.ID, "divResult")))
+                WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.ID, "divResult")))
                 button = self.driver.find_elements_by_name(button_name)
                 # 비동기 작업 전환하려면 sleep 필수
                 await asyncio.sleep(0)
@@ -203,10 +209,13 @@ class Korail:
                 btn[0].click()
             self.driver.switch_to.default_content()
 
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.ID, "btn_next")))
+
         self.driver.find_element_by_id('btn_next').click()
         
         self._close_alert()
         self._close_popup()
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "btn_blue_ang")))
 
         self.driver.find_elements_by_class_name('btn_blue_ang')[3].click()
         return True
