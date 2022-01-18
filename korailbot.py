@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
 from bot_token import Token
-from pyvirtualdisplay import Display
+#from pyvirtualdisplay import Display
 
 bot = commands.Bot(command_prefix='!', help_command=None)
 
@@ -33,8 +33,27 @@ class Korail:
         self.init()
 
     def init(self):
-        self.virtual_display = Display(visible=0, size=(800, 600)).start()
-        self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
+        #self.virtual_display = Display(visible=0, size=(800, 600)).start()
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--window-size=1920x1080')
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--incognito")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--enable-javascript")
+        chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36')
+        chrome_options.add_argument('Accept=*/*')
+        chrome_options.add_argument('Sec-Fetch-Site=same-origin')
+        chrome_options.add_argument('Sec-Fetch-Mode=no-cors')
+        chrome_options.add_argument('Sec-Fetch-Dest=script')
+        chrome_options.add_argument("lang=ko_KR")
+        chrome_options.add_argument('--user-data-dir=~/.config/google-chrome')
+        #chrome_options.add_argument('--no-sandbox')
+        #chrome_options.add_argument("--single-process")
+        #chrome_options.add_argument("--disable-dev-shm-usage")
+        self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver', chrome_options=chrome_options)
+        #self.driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver')
 
     def _close_popup(self):
         windows = self.driver.window_handles
@@ -67,7 +86,11 @@ class Korail:
         self.driver.find_element_by_id('txtMember').send_keys(self.MEMID)
         self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
         self.driver.find_element_by_class_name('btn_login').click()
-        time.sleep(0.2)
+#        asyncio.sleep(1)
+        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
+        print(self.driver.page_source)
+        with open('./page_source.txt', 'w') as fp:
+            fp.write(self.driver.page_source)
         login_success = self.driver.find_elements_by_xpath('/html/body/div[1]/div[2]/div[1]/div/ul/li[2]')
         print(login_success)
         if len(login_success) > 0:
@@ -186,7 +209,7 @@ class Korail:
 
     def korail_quit(self):
         self.driver.quit()
-        self.virtual_display.stop()
+        #self.virtual_display.stop()
 
 async def test_while(username):
     start = time.time()
