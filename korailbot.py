@@ -88,11 +88,11 @@ class Korail:
         self.driver.find_element_by_class_name('btn_login').click()
 #        asyncio.sleep(1)
         WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
-        print(self.driver.page_source)
-        with open('./page_source.txt', 'w') as fp:
-            fp.write(self.driver.page_source)
+        #print(self.driver.page_source)
+        # with open('./page_source.txt', 'w') as fp:
+        #     fp.write(self.driver.page_source)
         login_success = self.driver.find_elements_by_xpath('/html/body/div[1]/div[2]/div[1]/div/ul/li[2]')
-        print(login_success)
+        #print(login_success)
         if len(login_success) > 0:
             self._close_popup()
             return True
@@ -188,13 +188,17 @@ class Korail:
         self._close_popup()
 
         # 20분 이내 예약일 시
+        guidemsg = self.driver.find_elements_by_class_name('guide_msg')
+        if len(guidemsg) > 0:
+            if '20분 이내 열차는 예약하실 수 없습니다' in guidemsg[0].text:
+                return False
 
         # 경유일 경우 확인 창 넘겨줘야 함
         iframe = self.driver.find_elements_by_id('embeded-modal-traininfo')
         if len(iframe) > 0:
             self.driver.switch_to.frame(iframe[0])
             btn = self.driver.find_elements_by_class_name('btn_blue_ang')
-            print(btn)
+            #print(btn)
             if len(btn) > 0:
                 btn[0].click()
             self.driver.switch_to.default_content()
@@ -213,7 +217,7 @@ class Korail:
 
 async def test_while(username):
     start = time.time()
-    for i in range(0, 1000000):
+    for i in range(0, 10000):
         await asyncio.sleep(0)
         print(username, i)
     print(time.time() - start)
@@ -254,14 +258,14 @@ async def hi(ctx):
     '''
     인사하기
     '''
-    print(ctx.message.author.id)
-    await ctx.send('안녕하세요 봇이 정상적으로 작동중입니다.')
+    print(ctx.message.author.name)
+    await ctx.send(f'안녕하세요 {ctx.message.author.name}님! 봇이 정상적으로 작동중입니다.')
 
 
 @bot.command()
 async def reserve(ctx):
     print('Reserving 동작 중')
-    work_list[str(ctx.message.author.id)] = Korail()
+    work_list[ctx.message.author.name] = Korail()
     embed=discord.Embed(title="!reserve 명령어 성공", description="다음의 명령어를 차례대로 입력해주세요.\n```!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM```", color=discord.Color.random())
     embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
     embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
@@ -277,7 +281,7 @@ async def login(ctx, *, text = None):
         login_ID = args[0]
         login_PW = args[1]
         try:
-            login_success = work_list[str(ctx.message.author.id)].korail_login(login_ID, login_PW)
+            login_success = work_list[ctx.message.author.name].korail_login(login_ID, login_PW)
             if login_success:
                 embed=discord.Embed(title="!login 명령어 성공", description="로그인이 완료되었습니다. 다음 명령어를 입력해주세요. \nex) `!search 영등포 조치원 1 24 4`", color=discord.Color.random())
                 embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
@@ -309,7 +313,7 @@ async def search(ctx, *, text = None):
             time = '0' + time
 
         try:
-            result = work_list[str(ctx.message.author.id)].korail_search(start, dest, month, day, time)
+            result = work_list[ctx.message.author.name].korail_search(start, dest, month, day, time)
         except:
             await ctx.send('실행오류.')
             return
@@ -326,11 +330,14 @@ async def select(ctx, *, text = None):
         select = text.split(' ')[0]
         try:
             #  비동기 작업 추가
-            task = asyncio.create_task(work_list[str(ctx.message.author.id)].korail_reserve(select))
+            task = asyncio.create_task(work_list[ctx.message.author.name].korail_reserve(select))
             result = await task
             if result:
-                work_list[str(ctx.message.author.id)].korail_quit()
-                del work_list[str(ctx.message.author.id)]
+                work_list[ctx.message.author.name].korail_quit()
+                del work_list[ctx.message.author.name]
+            else :
+                await ctx.send('20분 이내의 열차는 예약하실 수 없습니다.')
+                return
         except RuntimeError as e:
             print(e)
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
@@ -341,5 +348,9 @@ async def select(ctx, *, text = None):
         await ctx.send(embed=embed)
     else:
         await ctx.send('인자를 확인해주세요.')
+
+@bot.command()
+async def whoisusing(ctx):
+    await ctx.send(work_list)
 
 bot.run(Token)
