@@ -82,14 +82,18 @@ class Korail:
 
         self.driver.get('https://www.letskorail.com/korail/com/login.do')
         
-        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "login_mem")))
+        self._close_alert()
         self._close_popup()
+        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "btn_login")))
+        self._close_alert()
+        self._close_popup()
+
 
         self.driver.find_element_by_id('txtMember').send_keys(self.MEMID)
         self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
         self.driver.find_element_by_class_name('btn_login').click()
 #        asyncio.sleep(1)
-        WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
         #print(self.driver.page_source)
         # with open('./page_source.txt', 'w') as fp:
         #     fp.write(self.driver.page_source)
@@ -136,6 +140,8 @@ class Korail:
         self._close_alert()
         self._close_popup()
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "btn_inq")))
+        self._close_alert()
+        self._close_popup()
         
 
 
@@ -154,6 +160,7 @@ class Korail:
         self._close_alert()
         self._close_popup()
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, "divResult")))
+        print('zzz')
 
         pages = self.driver.page_source
         result_table = self._parse_table(pages)
