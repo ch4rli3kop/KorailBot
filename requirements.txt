@@ -1,41 +1,5 @@
-aiohttp @ file:///tmp/build/80754af9/aiohttp_1632748411861/work
-async-generator==1.10
-async-timeout==3.0.1
-attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1640799537051/work
-beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1649463573192/work
-Bottleneck @ file:///tmp/build/80754af9/bottleneck_1648028898966/work
-brotlipy==0.7.0
-certifi==2021.10.8
-cffi @ file:///opt/conda/conda-bld/cffi_1642701102775/work
-chardet @ file:///home/conda/feedstock_root/build_artifacts/chardet_1649184154184/work
-cryptography @ file:///home/conda/feedstock_root/build_artifacts/cryptography_1634230275410/work
-discord.py @ file:///home/conda/feedstock_root/build_artifacts/discord.py_1623518917557/work
-h11 @ file:///home/conda/feedstock_root/build_artifacts/h11_1646944532589/work
-idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1642433548627/work
+beautifulsoup4
+discord.py
 lxml==4.8.0
-mkl-fft==1.3.1
-mkl-random==1.2.2
-mkl-service==2.4.0
-multidict @ file:///opt/conda/conda-bld/multidict_1640703752579/work
-numexpr @ file:///tmp/build/80754af9/numexpr_1640689833592/work
-numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1649764630438/work
-outcome @ file:///home/conda/feedstock_root/build_artifacts/outcome_1606397708505/work
-packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1637239678211/work
 pandas==1.4.1
-pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1636257122734/work
-pyOpenSSL @ file:///home/conda/feedstock_root/build_artifacts/pyopenssl_1643496850550/work
-pyparsing @ file:///home/conda/feedstock_root/build_artifacts/pyparsing_1649603503565/work
-PySocks @ file:///home/conda/feedstock_root/build_artifacts/pysocks_1648857263093/work
-python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1626286286081/work
-pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1647961439546/work
-selenium @ file:///home/conda/feedstock_root/build_artifacts/selenium_1641937238099/work/src/py
-six @ file:///home/conda/feedstock_root/build_artifacts/six_1620240208055/work
-sniffio @ file:///home/conda/feedstock_root/build_artifacts/sniffio_1648819188507/work
-sortedcontainers @ file:///home/conda/feedstock_root/build_artifacts/sortedcontainers_1621217038088/work
-soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1638550740809/work
-trio @ file:///home/conda/feedstock_root/build_artifacts/trio_1648842202562/work
-trio-websocket @ file:///home/conda/feedstock_root/build_artifacts/trio-websocket_1641849081899/work/dist
-typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1650247814259/work
-urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1647489083693/work
-wsproto @ file:///home/conda/feedstock_root/build_artifacts/wsproto_1645968784895/work
-yarl @ file:///tmp/build/80754af9/yarl_1606939947528/work
+selenium
