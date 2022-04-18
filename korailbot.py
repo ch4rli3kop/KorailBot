@@ -93,6 +93,7 @@ class Korail:
         self.driver.find_element_by_id('txtPwd').send_keys(self.PW)
         self.driver.find_element_by_class_name('btn_login').click()
 #        asyncio.sleep(1)
+        self.driver.get('https://www.letskorail.com/ebizprd/prdMain.do')
         WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
         #print(self.driver.page_source)
         # with open('./page_source.txt', 'w') as fp:
@@ -160,7 +161,6 @@ class Korail:
         self._close_alert()
         self._close_popup()
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, "divResult")))
-        print('zzz')
 
         pages = self.driver.page_source
         result_table = self._parse_table(pages)
