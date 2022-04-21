@@ -72,7 +72,7 @@ class Korail:
                 #print(alert_obj.text)
                 alert_obj.accept()
         except:
-            print('alert 종료')
+            pass
         finally:
             self.driver.switch_to.window(self.driver.window_handles[0])
 
@@ -94,12 +94,16 @@ class Korail:
         self.driver.find_element_by_class_name('btn_login').click()
 #        asyncio.sleep(1)
         self.driver.get('https://www.letskorail.com/ebizprd/prdMain.do')
-        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "coupon")))
+        self._close_alert()
+        self._close_popup()
+        
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "log_nm")))
+        self._close_alert()
+        self._close_popup()
         #print(self.driver.page_source)
         # with open('./page_source.txt', 'w') as fp:
         #     fp.write(self.driver.page_source)
         login_success = self.driver.find_elements_by_xpath('/html/body/div[1]/div[2]/div[1]/div/ul/li[2]')
-        #print(login_success)
         if len(login_success) > 0:
             self._close_popup()
             return True
@@ -280,8 +284,9 @@ async def hi(ctx):
 
 @bot.command()
 async def reserve(ctx):
-    print('Reserving 동작 중')
-    work_list[ctx.message.author.name] = Korail()
+    username = str(ctx.message.author.name)
+    print(f'[*] {username} : Reserving start')
+    work_list[username] = Korail()
     embed=discord.Embed(title="!reserve 명령어 성공", description="다음의 명령어를 차례대로 입력해주세요.\n```!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM```", color=discord.Color.random())
     embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
     embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
@@ -352,12 +357,13 @@ async def select(ctx, *, text = None):
                 work_list[ctx.message.author.name].korail_quit()
                 del work_list[ctx.message.author.name]
             else :
-                await ctx.send('20분 이내의 열차는 예약하실 수 없습니다.')
+                await ctx.send('20분 이내의 열차는 예약하실 수 없습니다.\nsearch 단계부터 다시 해주세요.')
                 return
         except RuntimeError as e:
             print(e)
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
             return
+        print(f'[*] {ctx.message.author.name} : Reserving finish')
         embed=discord.Embed(title="장바구니 추가 완료!", description="선택한 표를 장바구니에 추가했습니다.\n봇을 종료합니다.", color=discord.Color.random())
         embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
         embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
