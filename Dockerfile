@@ -16,4 +16,4 @@ USER 1000
 WORKDIR /home/user_default/
 
 ENTRYPOINT [ "python" ]
-CMD ["-m", "korailbot"]
+CMD ["-m", "korailbot.py", "-W", "ignore"]
