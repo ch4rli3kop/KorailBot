@@ -1,0 +1,5 @@
+services:
+  korailbot:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
