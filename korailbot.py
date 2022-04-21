@@ -13,7 +13,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
 from bot_token import Token
+import logging
 #from pyvirtualdisplay import Display
+
+logger = logging.getLogger('login_log')
+logger.setLevel(level=logging.WARNING)
 
 bot = commands.Bot(command_prefix='!', help_command=None)
 
@@ -286,6 +290,7 @@ async def hi(ctx):
 async def reserve(ctx):
     username = str(ctx.message.author.name)
     print(f'[*] {username} : Reserving start')
+    logger.warning(f'[*] {username} : Reserving start')
     work_list[username] = Korail()
     embed=discord.Embed(title="!reserve 명령어 성공", description="다음의 명령어를 차례대로 입력해주세요.\n```!login MEMBERSHIP_ID PW\n!search START DEST MONTH DAY TIME(시)\n!select NUM```", color=discord.Color.random())
     embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
@@ -364,6 +369,7 @@ async def select(ctx, *, text = None):
             await ctx.send('인자를 확인해주세요.\nex)!select 3')
             return
         print(f'[*] {ctx.message.author.name} : Reserving finish')
+        logger.warning(f'[*] {ctx.message.author.name} : Reserving finish')
         embed=discord.Embed(title="장바구니 추가 완료!", description="선택한 표를 장바구니에 추가했습니다.\n봇을 종료합니다.", color=discord.Color.random())
         embed.set_author(name="ch4rli3kop", url="https://github.com/ch4rli3kop", icon_url="https://avatars.githubusercontent.com/u/35250476?s=400&u=b904844df4ef55a5dba52a232c70efc998372bf6&v=4")
         embed.set_footer(text="도움말은 `!help` 커맨드를 참고해주세요.")
